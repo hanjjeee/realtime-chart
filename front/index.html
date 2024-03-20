@@ -1,0 +1,70 @@
+<!-- index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real-time Line Chart</title>
+    <!-- Vue.js 및 Chart.js CDN 추가 -->
+    <script src="https://cdn.jsdelivr.net/npm/vue@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div id="app">
+        <canvas id="realTimeChart"></canvas>
+    </div>
+
+    <script>
+        new Vue({
+            el: '#app',
+            data: {
+                chartData: {
+                    labels: ['TIME1', 'TIME2', 'TIME3', 'TIME4'],
+                    datasets: [{
+                        label: 'Real-time Data',
+                        data: [1,2,3,4],
+                        fill: false,
+                        borderColor: 'blue'
+                    }]
+                },
+                chartOptions: {
+                    scales: {
+                        xAxes: [{
+                            type: 'realtime'
+                        }]
+                    }
+                },
+                ws: null
+            },
+            mounted() {
+                // WebSocket 연결
+                this.ws = new WebSocket('ws://localhost:3000');
+
+                // WebSocket 메시지 수신
+                this.ws.addEventListener('message', event => {
+                    const data = JSON.parse(event.data);
+                    this.chartData.labels.push(data.time);
+                    this.chartData.datasets[0].data.push(data.value);
+                    this.updateChart();
+                });
+
+                // 라인 차트 생성
+                this.createChart();
+            },
+            methods: {
+                createChart() {
+                    const ctx = document.getElementById('realTimeChart').getContext('2d');
+                    this.chart = new Chart(ctx, {
+                        type: 'line',
+                        data: this.chartData,
+                        options: this.chartOptions
+                    });
+                },
+                updateChart() {
+                    this.chart.update();
+                }
+            }
+        });
+    </script>
+</body>
+</html>
