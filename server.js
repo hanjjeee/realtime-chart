@@ -8,11 +8,14 @@ const app = express();
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
 
-app.get("/api", (req, res) => {
+app.use(express.json());
+app.post("/api", (req, res) => {
+  const data = req.body;
+  
   // 클라이언트에게 데이터 전송
   wss.clients.forEach(client => {
     if (client.readyState === WebSocket.OPEN) {
-      client.send(JSON.stringify({ message: "Data from server" }));
+      client.send(JSON.stringify(data));
     }
   });
 
