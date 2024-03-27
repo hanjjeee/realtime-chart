@@ -9,9 +9,16 @@
     <script src="https://cdn.jsdelivr.net/npm/vue@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
+<style>
+    .chart-container {
+        width: 100%;
+    }
+  </style>
 <body>
     <div id="app">
-        <canvas id="realTimeChart"></canvas>
+        <div class="chart-container">
+            <canvas class="chart" id="realTimeChart"/>
+        </div>
     </div>
 
     <script>
@@ -21,12 +28,7 @@
                 intervalId: null,
                 chartData: {
                     labels: [],
-                    datasets: [{
-                        label: 'Real-time Data',
-                        data: [],
-                        // fill: false,
-                        // borderColor: 'blue'
-                    }]
+                    datasets: []
                 },
                 chartOptions: {
                 },
@@ -64,7 +66,7 @@
                     });
                 },
                 updateChart() {
-                    if(this.chartData.labels.length >= 6){
+                    if(this.chartData.labels.length >= 300){
                         this.chartData.labels.shift();
                         this.chartData.datasets[0].data.shift();
                     }
@@ -98,7 +100,7 @@
                         }
                         
                         if(newFlag) {
-                            this.chartData.datasets.push({label: ip, data: []})
+                            this.chartData.datasets.push({pointBorderWidth: 0.1,borderWidth: 1, label: ip, data: []})
                         }
                     }
 
@@ -106,6 +108,8 @@
                     console.log('[chart data]', this.chartData);
                     // chart update
                     this.updateChart();
+
+                    this.packets.delete(time);
                 },
                 setPackets(data) {
                    
@@ -126,7 +130,7 @@
                     }
 
                     // debug
-                    console.log('[packes]', this.packets);
+                    console.log('[packets]', this.packets);
                 },
             }
         });
