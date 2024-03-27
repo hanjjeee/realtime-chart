@@ -8,7 +8,8 @@ const app = express();
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
 
-app.use(express.urlencoded());
+// app.use(express.urlencoded()); // c curl
+app.use(express.json()); // postman test
 app.post("/api", (req, res) => {
   const data = req.body;
   

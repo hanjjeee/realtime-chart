@@ -18,22 +18,19 @@
         new Vue({
             el: '#app',
             data: {
+                intervalId: null,
                 chartData: {
-                    labels: ['TIME1', 'TIME2', 'TIME3', 'TIME4'],
+                    labels: [],
                     datasets: [{
                         label: 'Real-time Data',
-                        data: [1,2,3,4],
-                        fill: false,
-                        borderColor: 'blue'
+                        data: [],
+                        // fill: false,
+                        // borderColor: 'blue'
                     }]
                 },
                 chartOptions: {
-                    scales: {
-                        xAxes: [{
-                            type: 'realtime'
-                        }]
-                    }
                 },
+                packets: new Map(),
                 ws: null
             },
             mounted() {
@@ -43,13 +40,19 @@
                 // WebSocket 메시지 수신
                 this.ws.addEventListener('message', event => {
                     const data = JSON.parse(event.data);
-                    this.chartData.labels.push(data.time);
-                    this.chartData.datasets[0].data.push(data.value);
-                    this.updateChart();
+                    this.setPackets(data);
                 });
 
                 // 라인 차트 생성
                 this.createChart();
+
+                clearInterval(this.intervalId);
+                this.intervalId = setInterval(() => {
+                    this.setChartData();
+                }, 1000); // 1 sec
+            },
+            beforeDestroy() {
+                clearInterval(this.intervalId);
             },
             methods: {
                 createChart() {
@@ -61,8 +64,70 @@
                     });
                 },
                 updateChart() {
+                    if(this.chartData.labels.length >= 6){
+                        this.chartData.labels.shift();
+                        this.chartData.datasets[0].data.shift();
+                    }
                     this.chart.update();
-                }
+                },
+                setChartData(){
+                    // 1개씩 차트에 세팅
+                    let iterator = this.packets.keys();
+                    
+                    if(this.packets.size == 0){
+                        return;
+                    }
+
+                    let time = iterator.next().value;
+                    
+                    let timeObj = this.packets.get(time);
+
+                    this.chartData.labels.push(time);
+
+                    // dataset, data..
+                    for(let obj of timeObj) {
+                        let newFlag = true;
+                        let ip = obj[0];
+                        
+                        for(let dataset of this.chartData.datasets){
+                            if (dataset.label == ip) {
+                                dataset.data.push(timeObj.get(ip));
+                                newFlag = false;
+                                break;
+                            }
+                        }
+                        
+                        if(newFlag) {
+                            this.chartData.datasets.push({label: ip, data: []})
+                        }
+                    }
+
+                    // debug
+                    console.log('[chart data]', this.chartData);
+                    // chart update
+                    this.updateChart();
+                },
+                setPackets(data) {
+                   
+                    if(this.packets.get(data.time) == null || this.packets.get(data.time) == undefined) {
+                        // debug
+                        console.log('*new TIME')
+                       this.packets.set(data.time, new Map());
+                    }
+
+                    let timeObj = this.packets.get(data.time);
+                    
+                    if (timeObj.get(data.ip) == null || timeObj.get(data.ip) == undefined) {
+                        // debug
+                        console.log('*new IP')
+                        timeObj.set(data.ip, 1);
+                    } else {
+                        timeObj.set(data.ip, timeObj.get(data.ip)+1 );
+                    }
+
+                    // debug
+                    console.log('[packes]', this.packets);
+                },
             }
         });
     </script>
